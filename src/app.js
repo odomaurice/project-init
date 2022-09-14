@@ -1,27 +1,42 @@
+require('dotenv').config() 
+
 var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
-var logger = require('morgan');
+var httpLogger = require('morgan');
+var logger  = require('./health/logger/index') 
+var hbs = require('handlebars') 
+var createDatabaseConnection = require('./utils/Database/connect') 
 
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
 
+var { createRoutes } = require('./routes/index.route') 
+
+
+
+logger.info(' Application Up and Running ')
 
 var app = express();
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'ejs');
+app.set('view engine', 'hbs');
 
-app.use(logger('dev'));
+app.use(httpLogger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
+
+// Create database connection 
+(async ()=>{ createDatabaseConnection() })()
+
+
+// All Routes 
+createRoutes(app) 
+
+require('./routes/user/user.route')(app)
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -38,5 +53,6 @@ app.use(function(err, req, res, next) {
   res.status(err.status || 500);
   res.render('error');
 });
+
 
 module.exports = app;
